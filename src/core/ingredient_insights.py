@@ -36,6 +36,7 @@ class IngredientInsightExtractor:
         """
         self.reviews = reviews_df
         self.sentiment_analyzer = sentiment_analyzer
+        self._analysis_cache = {}
 
         print(f" initialize review bucketing per skin type and ingredient per skin type")
         self.buckets = self._build_buckets()
@@ -120,6 +121,11 @@ class IngredientInsightExtractor:
         """
         Analyze ingredient from pre-computed buckets.
         """
+
+        cache_key = (ingredient, skin_type)
+        if cache_key in self._analysis_cache:
+            return self._analysis_cache[cache_key]
+
         self._ensure_buckets() # cached demo dataset, remove to run on full data
         if ingredient not in self.KEY_INGREDIENTS:
             return None
@@ -142,8 +148,8 @@ class IngredientInsightExtractor:
         recommend_rate = reviews_df['is_recommended'].mean() if 'is_recommended' in reviews_df.columns else 0
 
         # Sentiment on ingredient-specific sentences
-        sentiments = []
-        sample_insights = []
+        all_sentences = []
+        sentence_sources = []
 
         for _, review in reviews_df.iterrows():
             sentences = self._extract_ingredient_sentences(
@@ -151,9 +157,18 @@ class IngredientInsightExtractor:
                 )
 
             for sentence in sentences:
-                sentiment = self.sentiment_analyzer.analyze_text(sentence)
-                sentiments.append(sentiment)
+                all_sentences.append(sentence)
+                sentence_sources.append(review)
 
+            # --- one batched call instead of one-by-one ---
+            if all_sentences:
+                results = self.sentiment_analyzer.sentiment_pipeline(all_sentences, batch_size=32)
+            else:
+                results = []
+
+            sentiments = results
+            sample_insights = []
+            for sentence, sentiment, review in zip(all_sentences, results, sentence_sources):
                 if len(sample_insights) < 5:
                     sample_insights.append({
                         'text': sentence[:200],
@@ -168,7 +183,7 @@ class IngredientInsightExtractor:
             if sentiments else 0.5
             )
 
-        return {
+        result {
             'ingredient': ingredient,
             'skin_type': skin_type,
             'mention_count': len(relevant_rows),
@@ -177,6 +192,9 @@ class IngredientInsightExtractor:
             'sentiment_positive_rate': float(sentiment_positive_rate),
             'sample_insights': sample_insights
             }
+        
+        self._analysis_cache[cache_key] = result
+        return result
 
     def compare_ingredient_across_skin_types(self, ingredient: str) -> Dict[str, Dict]:
         """
