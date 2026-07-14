@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.so
+.Python
+env/
+venv/
+
+# Secrets
+venv/
+venv311/
+.env
+.streamlit/secrets.toml
+
+# ChromaDB
+.chroma/
+chroma/
+*.db
+
+
+
+# Large files
+Data/
+*.csv
+*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Evaluation outputs
+evaluation_results.json
+evaluation_results_full.json
+*.png
+
+# Ignore full dataset
+data/raw/
+data/processed/
+
+# Allow demo data
+!data/demo/
+!data/demo/*.json
+!data/demo/*.csv
+
+# Ignore caches
+data/processed/buckets_cache.pkl
+
+archive*.zip
