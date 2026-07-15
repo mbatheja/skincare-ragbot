@@ -1,9 +1,11 @@
 import os
+import sys
 import pickle
 import re
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Optional, Tuple
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from core.sentiment_analyzer import SentimentAnalyzer
 
 class IngredientInsightExtractor:
@@ -183,15 +185,14 @@ class IngredientInsightExtractor:
             if sentiments else 0.5
             )
 
-        result {
-            'ingredient': ingredient,
+        result = { 'ingredient': ingredient,
             'skin_type': skin_type,
             'mention_count': len(relevant_rows),
             'avg_rating': float(avg_rating),
             'recommend_rate': float(recommend_rate),
             'sentiment_positive_rate': float(sentiment_positive_rate),
             'sample_insights': sample_insights
-            }
+        }
         
         self._analysis_cache[cache_key] = result
         return result

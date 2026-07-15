@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from sentiment_analyzer import SentimentAnalyzer
 from ingredient_insights import IngredientInsightExtractor
 import matplotlib.pyplot as plt

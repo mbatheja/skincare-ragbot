@@ -1,6 +1,9 @@
 import pandas as pd
 import json
 import ast 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Load dataset
 df = pd.read_csv('../data/raw/product_info.csv')
