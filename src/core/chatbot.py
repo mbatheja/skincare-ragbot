@@ -20,14 +20,14 @@ class ProductChatbot:
         # Check API Key
         try:
             import streamlit as st
-            api_key = st.secrets["OPENAI_API_KEY"]
-        except Exception:
-            api_key = os.environ.get("OPENAI_API_KEY")
-        
-        if not api_key:
+            self.api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        except:
+            self.api_key = os.environ.get("OPENAI_API_KEY")
+
+        if not self.api_key:
             raise ValueError("OPENAI_API_KEY not set")
-        
-        self.client = OpenAI(api_key=api_key)
+
+        self.client = OpenAI(api_key=self.api_key)
         
         try:
             self.reviews_db = ReviewsDatabase(reviews_file)
