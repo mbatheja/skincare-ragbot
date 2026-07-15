@@ -1,6 +1,8 @@
 # QSkin — AI-Powered Skincare Advisor
 
-An agentic AI system that provides personalized skincare recommendations, routine analysis, and ingredient insights — backed by 1M+ verified Sephora product reviews.
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://qskin-advisor.streamlit.app/)
+
+> Personalized skincare recommendations backed by 1,094,411 verified Sephora product reviews
 
 ---
 
@@ -13,18 +15,16 @@ Building an effective skincare routine requires synthesizing information scatter
 - **Community knowledge** on YouTube and r/SkincareAddiction — high quality but not searchable or personalized
 - **Brand marketing** — optimized for conversion, not accuracy
 
-Existing tools solve parts of this problem in isolation. None address the full picture:
+Existing tools solve parts of this problem in isolation:
 
 | Tool | What it does | What it misses |
 |------|-------------|----------------|
-| Skincarisma | Ingredient safety scoring | No routine-level analysis, no skin-type personalization |
+| Skincarisma | Ingredient safety scoring and skin-type flags | No routine-level analysis, no skin-type personalization |
 | INCIDecoder | Ingredient explanation | No product recommendations, no interaction checking |
 | Sephora reviews | Product ratings | No skin-type filtering, no ingredient context |
 | Reddit/YouTube | Community experience | Not searchable, not personalized, not scalable |
 
-**The gap nobody fills:** how do ingredients across *multiple products in a routine* interact with each other — and does that interaction change based on your skin type?
-
-A salicylic acid cleanser + AHA toner + retinol serum sounds like a solid routine. For dry skin it's a recipe for barrier damage. No existing consumer tool tells you this.
+**The gap nobody fills:** how do ingredients across multiple products in a routine interact — and does that change based on skin type? A salicylic acid cleanser + AHA toner + retinol serum sounds reasonable. For dry skin it is a recipe for barrier damage. No existing consumer tool tells you this.
 
 ---
 
@@ -32,249 +32,387 @@ A salicylic acid cleanser + AHA toner + retinol serum sounds like a solid routin
 
 QSkin consolidates these fragmented sources into a single personalized advisor:
 
-- **1M+ Sephora reviews filtered by skin type** → replaces generic star ratings with "how did people with *your* skin type rate this?"
-- **Semantic product search** → understands "something for my T-zone" not just exact ingredient names
-- **Routine-level analysis** → checks wash-off actives, ingredient redundancy, and cross-product interactions in a single pass
-- **Evidence-based ingredient insights** → sentiment analysis over real reviews surfaces what users actually experienced, not what the brand claims
-- **Dupe finder** → finds cheaper alternatives with matching active ingredients when a recommended product is out of budget
+- **1M+ reviews filtered by skin type** — replaces generic ratings with "how did people with *your* skin type rate this?"
+- **Semantic product search** — understands "something for my T-zone", not just exact ingredient names
+- **Routine-level analysis** — checks wash-off actives, ingredient redundancy, and cross-product interactions
+- **Evidence-based ingredient insights** — sentiment analysis over real reviews, not brand claims
+- **Dupe finder** — cheaper alternatives with matching active ingredients
+- **Safety guardrails** — redirects medical conditions, warns vulnerable users
+
+---
+
+## Dataset
+
+**Source:** [Sephora Products and Skincare Reviews](https://www.kaggle.com/datasets/nadyinky/sephora-products-and-skincare-reviews) on Kaggle
+
+### Products
+
+- **File:** `product_info.csv`
+- **Raw:** 8,494 products
+- **After filtering out-of-stock:** 7,868 products used
+- **Fields:** product_id, product_name, brand_name, price_usd, ingredients, highlights, rating, reviews_count, loves_count, primary_category, secondary_category, tertiary_category
+
+### Reviews
+
+| File | Rows |
+|------|------|
+| reviews_0-250.csv | 602,130 |
+| reviews_250-500.csv | 206,725 |
+| reviews_500-750.csv | 116,262 |
+| reviews_750-1250.csv | 119,317 |
+| reviews_1250-end.csv | 49,977 |
+| **Total** | **1,094,411** |
+
+**Fields:** author_id, rating, is_recommended, review_text, skin_type, skin_tone, eye_color, hair_color, product_id, product_name, brand_name, price_usd
+
+### Key Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total reviews | 1,094,411 |
+| Reviews with skin type | 982,854 (89.8%) |
+| Reviews without skin type | 111,557 (10.2%) |
+| Unique products reviewed | 2,351 |
+| Unique reviewers | 503,216 |
+| Overall recommendation rate | 84.0% |
+
+**Skin type distribution:**
+
+| Skin Type | Reviews | Share |
+|-----------|---------|-------|
+| Combination | 544,513 | 49.7% |
+| Dry | 185,937 | 17.0% |
+| Normal | 131,910 | 12.0% |
+| Oily | 120,494 | 11.0% |
+| Unknown | 111,557 | 10.2% |
+
+**Rating distribution:**
+
+| Stars | Reviews | Share |
+|-------|---------|-------|
+| 5 | 698,951 | 63.9% |
+| 4 | 199,389 | 18.2% |
+| 3 | 81,816 | 7.5% |
+| 2 | 53,032 | 4.8% |
+| 1 | 61,223 | 5.6% |
+
+### Why This Dataset
+
+The `skin_type` field in reviews is the core asset. Most skincare recommendation systems use generic ratings. This dataset enables collaborative filtering by user similarity — "how did people with *your specific skin type* rate this product?"
 
 ---
 
 ## Architecture
-User Query
-↓
-Guardrails (medical redirect, off-topic, vulnerable contexts)
-↓
-LangChain ReAct Agent (GPT-4o-mini)
-↓ decides which tools to call
-┌─────────────────────────────────────────────────────┐
-│  Tool 1: search_products                            │
-│    → ChromaDB semantic search                       │
-│    → Category + price filtering                     │
-│    → Skin-type review scoring                       │
-│                                                     │
-│  Tool 2: find_cheaper_alternatives                  │
-│    → Jaccard similarity on active ingredients       │
-│    → Price-ranked alternatives                      │
-│                                                     │
-│  Tool 3: get_ingredient_insights                    │
-│    → Pre-bucketed reviews by skin type              │
-│    → DistilBERT sentiment analysis                  │
-│                                                     │
-│  Tool 4: check_ingredient_interactions              │
-│    → Rule-based interaction database                │
-│    → Severity classification                        │
-│                                                     │
-│  Tool 5: critique_routine                           │
-│    → Wash-off active detection                      │
-│    → Redundancy analysis                            │
-│    → LLM-generated optimization advice             │
-└─────────────────────────────────────────────────────┘
-↓
-GPT-4o-mini synthesizes tool results
-↓
-Personalized response with citations
 
----
+```
+USER INTERFACE (Streamlit)
+6 tabs: Chat | Routine Builder | Ingredient Insights
+        Sentiment Analysis | Find Dupes | Interactions
+         |
+         v
+GUARDRAILS LAYER (guardrails.py)
+  - Medical condition redirect (eczema, rosacea, psoriasis)
+  - Vulnerable context warning (pregnancy, breastfeeding, chemo)
+  - Off-topic filter (finance, diet, politics)
+  - Allergen extraction from query
+         |
+         v
+LangGraph ReAct AGENT (agent.py)
+  GPT-4o-mini reads query, decides which tools to call,
+  executes tools, synthesizes final response
+         |
+    _____|_____________________________________
+    |           |           |         |       |
+    v           v           v         v       v
 
-## Key Features
+search_     find_       get_       check_   critique_
+products    cheaper_    ingredient_ ingredient_ routine
+            alts        insights   interactions
 
-### Personalized Product Search
-Semantic vector search over 7,800+ products, re-ranked by reviews from users with matching skin type. Products rated 4.8/5 by dry skin users surface above products rated 4.8/5 overall.
-
-### Ingredient Insights
-Pre-computed sentiment analysis over 1M+ reviews, bucketed by ingredient × skin type. Answers "does niacinamide actually work for oily skin?" with real data — not marketing claims.
-
-### Routine Critique
-Identifies three classes of routine problems:
-- **Wash-off actives**: salicylic acid in a cleanser gets rinsed off before penetrating pores
-- **Redundancy**: niacinamide in both serum and moisturizer — paying twice for the same ingredient
-- **Interactions**: retinol + AHA causes over-exfoliation — suggests AM/PM separation
-
-### Dupe Finder
-Finds cheaper alternatives using Jaccard similarity on active ingredients. "Paula's Choice BHA is $34 — here are 3 alternatives under $20 with 80%+ ingredient overlap."
-
-### Safety Guardrails
-Pre-flight checks before every agent call:
-- Medical conditions (eczema, psoriasis) → dermatologist redirect
-- Vulnerable contexts (pregnancy, breastfeeding, chemotherapy) → safety warning with regex pattern matching
-- Off-topic queries → graceful redirect
+ChromaDB    Jaccard     Pre-bucketed  Rule-based   Wash-off
+semantic    similarity  1M reviews    interaction  active
+search      on active   by skin_type  database     detection
+    +       ingredients     +         6 pairs      +
+category        +       DistilBERT    severity     redundancy
+price       price rank  sentiment     scoring      analysis
+filter                  per sentence               +
+    +                                              LLM
+skin-type                                          critique
+review
+re-ranking
+    |           |           |              |          |
+    v           v           v              v          v
+        ChromaDB        Reviews DB           Rule DBs
+        7,868 products  1,094,411 reviews    EFFICACY_RULES
+        384-dim vectors bucketed by          INGREDIENT_
+        (sentence-      skin_type x          INTERACTIONS
+        transformers    ingredient           VULNERABLE_
+        default)                             CONTEXTS
+              |               |
+              v               v
+                  DATA LAYER
+            product_info.csv (8,494 products)
+            reviews_0-250.csv
+            reviews_250-500.csv
+            reviews_500-750.csv     1,094,411 reviews
+            reviews_750-1250.csv
+            reviews_1250-end.csv
+```
 
 ---
 
 ## Evaluation
 
 ### Phase 1: Retrieval Personalization
-Evaluated on 2,000 held-out reviews using category-aware queries:
+
+**What we tested:** Does filtering by skin-type reviews improve which products we surface?
+
+**Methodology:** Held out 2,000 reviews (random_state=42) as test cases. For each review, generated a category-aware query — for example "Face Moisturizer for dry skin" — and checked whether the system retrieved the exact product the reviewer chose from a catalog of 7,868 products.
+
+This is a deliberately strict evaluation. It isolates the personalization contribution by stripping away query richness. Real users provide richer queries which would yield higher absolute precision. What matters here is the *relative* improvement.
 
 | Approach | Precision@5 | Precision@10 |
 |----------|-------------|--------------|
-| Baseline (semantic only) | 0.90% | 1.60% |
-| Personalized (skin-type scoring) | 1.65% | 2.80% |
-| **Improvement** | **+83%** | **+75%** |
+| Baseline — semantic search only | 1.45% | 2.20% |
+| Personalized — skin-type re-ranking | 1.95% | 3.10% |
+| **Relative improvement** | **+34.5%** | **+40.9%** |
 
-Statistical significance: p=0.007 (paired t-test, n=2,000)
+**Statistical test:** Paired t-test, n=2,000, fixed seed (random_state=42)
+- t-statistic: 1.667
+- p-value: 0.096
+
+The improvement is directionally positive and consistent across runs with a fixed seed. p=0.096 is borderline — a larger evaluation set or richer query generation (using actual product names rather than category+skin-type queries) would strengthen this. The result validates the core hypothesis: skin-type-matched reviews meaningfully re-rank product candidates.
+
+---
 
 ### Phase 2: Agent Tool Selection
-Evaluated on 14 test cases across 6 query categories:
 
-| Category | Accuracy |
-|----------|----------|
-| Product search | 100% |
-| Ingredient insights | 100% |
-| Interactions | 100% |
-| Routine critique | 100% |
-| Alternatives | 100% |
-| Multi-tool queries | 67% |
-| **Overall** | **~85%** |
+**What we tested:** Does the agent call the correct tool(s) for each query type?
 
-Multi-tool accuracy is lowest — complex queries requiring 2+ tools are the primary failure mode.
+**Methodology:** 14 hand-crafted test cases across 6 query categories. For each query, we extract which tools were called using LangGraph's message trace and compare against expected tools.
+
+| Category | Tests | Passed | Accuracy |
+|----------|-------|--------|----------|
+| Product search | 3 | 2 | 67% |
+| Cheaper alternatives | 2 | 2 | 100% |
+| Ingredient insights | 2 | 2 | 100% |
+| Ingredient interactions | 2 | 2 | 100% |
+| Routine critique | 2 | 1 | 50% |
+| Multi-tool queries | 3 | 2 | 67% |
+| **Overall** | **14** | **11** | **79%** |
+
+**Failure analysis:**
+
+| Failure | Query | Expected | Got |
+|---------|-------|----------|-----|
+| Memory answer | "find me a serum for acne scarring" | search_products | none |
+| Memory answer | "analyze my skincare routine..." | critique_routine | none |
+| Missing tool | "is retinol + AHA safe and what products?" | interactions + search | interactions only |
+
+All three failures share the same root cause: the agent answered from memory or stopped after the first relevant tool rather than calling all required tools. Addressed through system prompt refinement.
+
+> Note: Response quality evaluation via LLM-as-judge was explored but excluded from final results due to instability in structured JSON output from the judge model.
+
+---
+
+## LLM Cost Analysis
+
+All LLM calls use **GPT-4o-mini** pricing: $0.15 per 1M input tokens, $0.60 per 1M output tokens.
+
+| Feature | LLM Calls | Estimated Cost | Notes |
+|---------|-----------|----------------|-------|
+| Product search | 1 | ~$0.001 | Generation only |
+| Ingredient insights | 0 | $0.000 | Pre-computed buckets |
+| Interaction check | 0 | $0.000 | Rule-based lookup |
+| Routine critique | 1 | ~$0.002 | Analysis + generation |
+| Find alternatives | 0 | $0.000 | Jaccard similarity |
+| Multi-tool query | 2-3 | ~$0.003 | Multiple tool calls |
+
+**Estimated cost per conversation: $0.01 — $0.03**
+
+Most features use zero LLM calls. Ingredient insights, interaction checking, and dupe finding rely on pre-computed review data, rule-based logic, and similarity metrics. The LLM is only invoked for natural language generation.
 
 ---
 
 ## Technical Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Agent framework | LangChain ReAct + OpenAI function calling |
-| LLM | GPT-4o-mini |
-| Vector store | ChromaDB |
-| Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
-| Sentiment analysis | DistilBERT (distilbert-base-uncased-finetuned-sst-2-english) |
-| Data processing | pandas, numpy |
-| UI | Streamlit |
-| Statistical evaluation | scipy (paired t-test) |
+| Component | Technology | Notes |
+|-----------|-----------|-------|
+| Agent framework | LangGraph ReAct | OpenAI function calling |
+| LLM | GPT-4o-mini | Natural language generation |
+| Vector store | ChromaDB (EphemeralClient) | Semantic product search |
+| Embeddings | ChromaDB DefaultEmbeddingFunction | sentence-transformers default |
+| Sentiment model | DistilBERT SST-2 | distilbert-base-uncased-finetuned-sst-2-english |
+| Data processing | pandas, numpy | ETL and aggregation |
+| Statistical evaluation | scipy | Paired t-test |
+| UI | Streamlit | 6-tab web interface |
+| Safety | Custom guardrails | Regex pattern matching |
 
 ---
 
-## Dataset
+## Features
 
-- **Products**: 7,868 Sephora products (name, brand, price, ingredients, category, ratings)
-- **Reviews**: 1,094,411 reviews across 5 files (rating, skin type, review text, recommendation)
-- **Source**: [Sephora Products and Skincare Reviews](https://www.kaggle.com/datasets/nadyinky/sephora-products-and-skincare-reviews) — Kaggle
+### 1. Personalized Product Search
+Semantic search over 7,868 products, re-ranked by reviews from users with matching skin type. A product rated 4.5 overall but 3.2 by dry skin users ranks lower for dry skin queries.
+
+### 2. Ingredient Insights
+1M+ reviews pre-bucketed by ingredient × skin type at startup. Surfaces real user experience per skin type — not brand claims. Uses DistilBERT for sentence-level sentiment on ingredient mentions.
+
+### 3. Routine Critique
+Three issue classes detected automatically:
+
+- **Wash-off actives** — salicylic acid in a cleanser rinses off before penetrating pores (needs 10-20 min contact time)
+- **Redundancy** — niacinamide in both serum and moisturizer — paying twice for the same ingredient
+- **Interactions** — retinol + AHA causes over-exfoliation — system recommends AM/PM separation
+
+### 4. Dupe Finder
+Jaccard similarity on active ingredients identifies cheaper products with equivalent actives. Ranked by price saving and ingredient overlap percentage.
+
+### 5. Sentiment Analysis
+Per-product sentiment breakdown filterable by skin type. Shows most positive and most negative reviews with DistilBERT confidence scores.
+
+### 6. Safety Guardrails
+Pre-flight checks before every agent call:
+
+- Medical conditions → dermatologist redirect (does not proceed)
+- Pregnancy, breastfeeding, chemotherapy → evidence-based safety warning (proceeds with caution)
+- Off-topic queries → graceful redirect
+- Allergen mentions → flagged and passed to product search tool
 
 ---
 
 ## Project Structure
+
+```
 Skincare_RAGbot/
+│
 ├── data/
-│   ├── raw/                    # original CSVs (not in repo — too large)
-│   └── processed/              # generated files (not in repo)
+│   ├── raw/                        # original CSVs — not in repo (too large)
+│   ├── processed/                  # generated files — not in repo
+│   └── demo/                       # 100 products, 10K reviews — in repo
 │
 ├── src/
 │   ├── ingestion/
-│   │   ├── convert_data.py     # CSV → JSON product conversion
-│   │   ├── explore_reviews.py  # multi-file review loader + EDA
-│   │   └── reviews_db.py       # review queries by product/skin type
+│   │   ├── __init__.py
+│   │   ├── convert_data.py         # product CSV to JSON
+│   │   ├── explore_reviews.py      # multi-file loader, deduplication, EDA
+│   │   └── reviews_db.py           # review queries by product and skin type
 │   │
 │   ├── core/
-│   │   ├── chatbot.py          # vector search + personalization
-│   │   ├── sentiment_analyzer.py # DistilBERT sentiment
-│   │   ├── ingredient_insights.py # ingredient performance by skin type
-│   │   └── routine_critic.py   # routine analysis + dupe finder
+│   │   ├── __init__.py
+│   │   ├── chatbot.py              # ChromaDB indexing, vector search, personalization
+│   │   ├── sentiment_analyzer.py   # DistilBERT sentiment pipeline
+│   │   ├── ingredient_insights.py  # review bucketing, ingredient analysis
+│   │   └── routine_critic.py       # routine analysis, dupe finder, LLM critique
 │   │
 │   ├── agent/
-│   │   ├── agent.py            # LangChain ReAct agent + 5 tools
-│   │   └── guardrails.py       # safety checks
+│   │   ├── __init__.py
+│   │   ├── agent.py                # LangGraph ReAct agent, 5 tools
+│   │   └── guardrails.py           # pre-flight safety checks
 │   │
 │   └── evaluation/
-│       ├── evaluate_personalization.py
-│       ├── evaluate_agent.py
-│       └── evaluate_sentiment.py
+│       ├── __init__.py
+│       ├── evaluate_personalization.py   # precision@K, paired t-test
+│       └── evaluate_agent.py             # tool selection accuracy
 │
-├── app.py                      # Streamlit UI (6 tabs)
+├── app.py                          # Streamlit UI — 6 tabs
 ├── requirements.txt
-├── runtime.txt                 # python-3.11.9
-├── Procfile                    # Railway deployment
+├── runtime.txt                     # python-3.11.9
+├── .streamlit/
+│   └── config.toml                 # mauve and white theme
+├── .gitignore
 └── README.md
+```
+
 ---
 
 ## Setup
 
 ### Prerequisites
+
 - Python 3.11
 - OpenAI API key
 
 ### Installation
 
 ```bash
-# Clone repo
-git clone https://github.com/YOUR_USERNAME/skincare-ragbot.git
+git clone https://github.com/mbatheja/skincare-ragbot.git
 cd skincare-ragbot
 
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\Activate
+source venv/bin/activate
+# Windows: .\venv\Scripts\Activate
 
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Set API key
-cp .env.example .env
-# Add your OPENAI_API_KEY to .env
+### Environment
+
+Create a `.env` file in the project root:
+
+```
+OPENAI_API_KEY=sk-your-key-here
 ```
 
 ### Data Setup
 
-Download the dataset from Kaggle and place files in `data/raw/`:
-- `product_info.csv`
-- `reviews_0-250.csv`
-- `reviews_250-500.csv`
-- `reviews_500-750.csv`
-- `reviews_750-1250.csv`
-- `reviews_1250-end.csv`
-
-Then run the data pipeline:
+Download the dataset from [Kaggle](https://www.kaggle.com/datasets/nadyinky/sephora-products-and-skincare-reviews) and place all files in `data/raw/`. Then run:
 
 ```bash
-# Process products
+# Process products (CSV to JSON)
 python src/ingestion/convert_data.py
 
-# Combine reviews
+# Combine and clean reviews
 python src/ingestion/explore_reviews.py
 ```
 
 ### Run
 
 ```bash
-# Test agent
-python src/agent/agent.py
-
-# Launch UI
 streamlit run app.py
 ```
+
+> First load takes approximately 30 seconds while DistilBERT initializes and ChromaDB indexes products. Subsequent requests are faster due to caching.
 
 ---
 
 ## Limitations
 
-**RAG choice**: Semantic search over a product catalog is debatable — structured Elasticsearch with filters would give better precision for exact ingredient queries. Semantic search adds value for conceptual queries ("something for my T-zone") but is overkill for brand/ingredient name lookup.
+**Statistical significance:** p=0.096 on personalization improvement. Directionally positive, borderline significant. A larger held-out set or richer query generation would strengthen this.
 
-**Ingredient interactions**: Currently rule-based (9 rules, 6 interactions). Only covers common combinations. A RAG system over cosmetic dermatology papers would give better coverage and cited evidence.
+**RAG choice:** Semantic search over a structured catalog is debatable. Elasticsearch with filters would give better precision for exact ingredient and brand name queries. Semantic search adds value for conceptual queries where user language does not match product terminology directly.
 
-**Agent reliability**: Multi-tool queries (requiring 2+ tool calls) achieve 67% accuracy vs 100% for single-tool queries. Complex queries like "find a cheaper alternative and check if it works for dry skin" occasionally result in only one tool being called.
+**Ingredient interactions:** 6 hardcoded interaction pairs covering common combinations. A RAG system over PubMed cosmetic dermatology papers would give broader coverage, cited evidence, and concentration-aware severity.
 
-**Deployment data**: Deployed version uses a 10K review sample and 100 product subset due to Railway memory constraints. Full dataset runs locally.
+**Agent tool selection:** 79% accuracy on 14 test cases. Multi-tool and routine critique queries are the primary failure modes.
+
+**Deployment:** The deployed version uses 100 products and 10,000 reviews due to memory constraints on the free tier. The full system (7,868 products, 1,094,411 reviews) runs locally.
 
 ---
 
 ## Future Scope
 
+The current version is v1 of the product and needs tightening along various dimensions mentioned below in addition to the UI and latency fixes that can make it more user friendly:
+
 **Research-backed ingredient intelligence**
-Replace hardcoded rules with RAG over PubMed cosmetic dermatology papers. Enables cited evidence, novel ingredient handling, and concentration-aware interaction severity.
+RAG over PubMed cosmetic dermatology papers via the Entrez API. Enables cited evidence, novel ingredient handling, and concentration-aware interaction severity — replacing the current hardcoded rule database.
 
 **Hybrid search**
-Combine BM25 keyword search (for ingredient/brand name precision) with semantic search (for conceptual queries). Current pure semantic search occasionally returns wrong product categories.
+BM25 keyword search combined with semantic search. Fixes cases where exact ingredient or brand names are not retrieved by semantic similarity alone.
 
-**Fine-tuned embeddings**
-Domain-specific embeddings trained on skincare product descriptions would improve retrieval precision for technical queries (INCI names, active concentrations).
+**Drug-drug interaction extension**
+The same agent architecture extended to pharmaceutical DDI checking using DrugBank and FDA label data. A natural extension toward clinical decision support roles.
+
+**Fine-tuned domain embeddings**
+Skincare-specific embeddings trained on INCI names and product descriptions would improve retrieval precision for technical queries.
 
 **Multi-retailer price comparison**
-Integrate iHerb, Amazon, and Stylevana APIs to show real-time pricing and availability alongside product recommendations.
+Real-time pricing from iHerb, Amazon, and Stylevana to complement the dupe finder with live availability data.
 
 ---
 
 ## Author
 
 Mahima Batheja
+
 [LinkedIn](https://linkedin.com/in/mahima-batheja) | [GitHub](https://github.com/mbatheja)
