@@ -1,19 +1,22 @@
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Optional
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REVIEWS_FILE  = os.path.join(PROJECT_ROOT, 'data', 'demo', 'combined_reviews.csv')
 
 class ReviewsDatabase:
     """
     Handle review data and queries.
     """
-    def __init__(self, reviews_file : str):
+    def __init__(self, reviews_file : str = None):
         """
         Load reviews data.
         """
         print("Loading reviews database")
+        reviews_file = reviews_file or REVIEWS_FILE
         self.reviews = pd.read_csv(reviews_file, low_memory=False, dtype={"author_id": str})
         self.reviews = self._clean_data()
 

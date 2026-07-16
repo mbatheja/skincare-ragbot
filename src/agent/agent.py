@@ -12,12 +12,13 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from core.sentiment_analyzer import SentimentAnalyzer
 from core.ingredient_insights import IngredientInsightExtractor
 from core.routine_critic import RoutineCritic
 from core.chatbot import ProductChatbot
 from agent.guardrails import check_guardrails, extract_allergens_from_query
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 load_dotenv()
 
@@ -27,11 +28,11 @@ class SkincarAgent:
     """
     def __init__(self):
 
-        products_file = 'products_demo.json' if os.path.exists('products_demo.json') else 'data/processed/products.json'
-        reviews_file  = 'reviews_demo.csv'   if os.path.exists('reviews_demo.csv')   else 'data/processed/combined_reviews.csv'
+        PRODUCTS_FILE = os.path.join(PROJECT_ROOT, 'data', 'demo', 'products.json')
+        REVIEWS_FILE  = os.path.join(PROJECT_ROOT, 'data', 'demo', 'combined_reviews.csv')
 
-        print(f"Using products: {products_file}")
-        print(f"Using reviews:  {reviews_file}")
+        print(f"Using products: {PRODUCTS_FILE}")
+        print(f"Using reviews:  {REVIEWS_FILE}")
 
 
         print("--Initializing Skincare Agent--")

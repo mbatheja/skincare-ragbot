@@ -13,18 +13,17 @@ from typing import List, Dict, Any, Optional
 
 load_dotenv()
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PRODUCTS_FILE = os.path.join(PROJECT_ROOT, 'data', 'demo', 'products.json')
+REVIEWS_FILE  = os.path.join(PROJECT_ROOT, 'data', 'demo', 'combined_reviews.csv')
+
 class ProductChatbot:
     def __init__(self, products_file: str = None, reviews_file: str = None):
         """Initialize the chatbot."""
 
-        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
-        if products_file is None:
-            products_file = os.path.join(base, 'data', 'demo', 'products.json')
-            
-        if reviews_file is None:
-            reviews_file = os.path.join(base, 'data', 'demo', 'combined_reviews.csv')
-            
+        products_file = products_file or PRODUCTS_FILE
+        reviews_file  = reviews_file  or REVIEWS_FILE
+        
         print(f"Products: {products_file}")
         print(f"Reviews:  {reviews_file}")
 
