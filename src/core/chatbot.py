@@ -14,8 +14,20 @@ from typing import List, Dict, Any, Optional
 load_dotenv()
 
 class ProductChatbot:
-    def __init__(self, products_file: str = "data/processed/products.json", reviews_file: str="data/processed/combined_reviews.csv"):
+    def __init__(self, products_file: str = None, reviews_file: str = None):
         """Initialize the chatbot."""
+
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+        if products_file is None:
+            products_file = os.path.join(base, 'data', 'demo', 'products.json')
+            
+        if reviews_file is None:
+            reviews_file = os.path.join(base, 'data', 'demo', 'combined_reviews.csv')
+            
+        print(f"Products: {products_file}")
+        print(f"Reviews:  {reviews_file}")
+
         print("Initializing chatbot...")
         # Check API Key
         try:
