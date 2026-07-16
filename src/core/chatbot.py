@@ -68,7 +68,10 @@ class ProductChatbot:
         if self.collection.count() != len(self.products):
             print(f"Collection mismatch: {self.collection.count()} indexed vs {len(self.products)} products")
             print("Clearing and reindexing...")
-            self.chroma_client.delete_collection("beauty_products")
+            try:
+                self.chroma_client.delete_collection("beauty_products")
+            except Exception:
+                pass
             self.collection = self.chroma_client.get_or_create_collection(
                 name="beauty_products",
                 embedding_function=self.embedding_function
