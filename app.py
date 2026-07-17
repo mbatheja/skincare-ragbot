@@ -443,14 +443,12 @@ with tab2:
 
             # Search and display matching products
             if product_search:
-                matching_products = next(
-                    (p for p in agent.chatbot.products
-                    if name.lower() in p['name'].lower()
-                    or name.lower() in f"{p['brand']} {p['name']}".lower()
-                    or all(word in f"{p['brand']} {p['name']}".lower() 
-                            for word in name.lower().split())),
-                    None
-                )
+                matching_products = [
+                    p for p in agent.chatbot.products
+                    if product_search.lower() in p['name'].lower()
+                    or product_search.lower() in p['brand'].lower()
+                    or product_search.lower() in f"{p['brand']} {p['name']}".lower()
+                ]
 
                 if not matching_products:
                     st.warning(f"No products found matching '{product_search}'")
