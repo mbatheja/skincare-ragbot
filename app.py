@@ -46,10 +46,10 @@ with st.sidebar:
 
     st.markdown("### Quick prompts")
     st.caption("• Recommend a moisturizer under $40")
-    st.caption("• Paula's Choice BHA is too expensive")
+    st.caption("• Glow Recipe Watermelon Pink Juice Oil-Free Moisturizer is too expensive")
     st.caption("• Is niacinamide good for oily skin?")
     st.caption("• Can I use retinol with vitamin C?")
-    st.caption("• Review my routine: CeraVe cleanser, Niacinamide serum")
+    st.caption("• Review my routine: SK-II Facial Treatment Cleanser, First Aid Beauty Ultra Repair Cream")
 
 #Build user context
 def get_user_context() -> str:
@@ -430,7 +430,7 @@ with tab2:
             with col1:
                 product_search = st.text_input(
                     "Search for a product",
-                    placeholder="e.g. e.g. CeraVe Moisturizer, Laneige Lip Mask",
+                    placeholder="e.g. e.g. Sunday Riley Ceramic Slip Cleanser, First Aid Beauty Ultra Repair Cream",
                     key="sentiment_product_search"
                 )
                 
@@ -579,7 +579,7 @@ with tab2:
             with col1:
                 dupe_search = st.text_input(
                     "Product name",
-                    placeholder="e.g. Paula's Choice BHA, Drunk Elephant Protini",
+                    placeholder="e.g. Charlotte Tilbury Goddess Clay Mask, SK-II Facial Treatment Toner",
                     key = "dupe_search"
                 )
             
@@ -725,7 +725,7 @@ with tab2:
         else:  # Enter product names
             interaction_input = st.text_area(
                 "Enter product names (one per line)",
-                placeholder="CeraVe SA Cleanser\nThe Ordinary Retinol",
+                placeholder="First Aid Beauty Ultra Repair Cream\nOLEHENRIKSEN Glow Cycle Serum",
                 height=120,
                 key="product_name_input"
             )

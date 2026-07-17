@@ -49,3 +49,6 @@ data/processed/
 data/processed/buckets_cache.pkl
 
 archive*.zip
+
+# debug
+fix_demo.py
