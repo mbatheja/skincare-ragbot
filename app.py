@@ -618,7 +618,7 @@ with tab2:
                     reference_product = st.selectbox(
                         "Select reference product",
                         options = matches,
-                        format_func=lambda p: f"{p['name']} by {p['brand']} (${p['price']:.2f})" if p else "Select a product",
+                        format_func=lambda p: f"{p['name']} by {p['brand']} (${float(p['price']):.2f})" if p and p.get('price') else f"{p['name']} by {p['brand']}" if p else "Select a product",
                         key="dupe_reference"
                     )
                 
