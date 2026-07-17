@@ -178,8 +178,7 @@ with tab2:
 
             if p is None:
                 return "Skip"
-            rating = f"{p['rating']:.1f}" if p['rating'] > 0 else ""
-            return f"{p['name']} - ${p['price']:.2f}" if p.get('price') else p.get('name', 'Unknown')
+            return f"{p.get('name','Unknown')} - ${float(p.get('price', 0) or 0):.2f}"
         
         col1, col2, col3 = st.columns(3)
 
