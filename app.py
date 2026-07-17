@@ -443,10 +443,14 @@ with tab2:
 
             # Search and display matching products
             if product_search:
-                matching_products = [
-                    p for p in agent.chatbot.products
-                    if product_search.lower() in p['name'].lower()
-                ]
+                matching_products = next(
+                    (p for p in agent.chatbot.products
+                    if name.lower() in p['name'].lower()
+                    or name.lower() in f"{p['brand']} {p['name']}".lower()
+                    or all(word in f"{p['brand']} {p['name']}".lower() 
+                            for word in name.lower().split())),
+                    None
+                )
 
                 if not matching_products:
                     st.warning(f"No products found matching '{product_search}'")
@@ -601,10 +605,14 @@ with tab2:
 
             if dupe_search:
                 #Show matching products
-                matches = [
-                    p for p in agent.chatbot.products
-                    if dupe_search.lower() in p['name'].lower()
-                ]
+                matches = next(
+    (p for p in agent.chatbot.products
+     if name.lower() in p['name'].lower()
+     or name.lower() in f"{p['brand']} {p['name']}".lower()
+     or all(word in f"{p['brand']} {p['name']}".lower() 
+            for word in name.lower().split())),
+    None
+)
 
                 if not matches:
                     st.warning(f"No products found matching '{dupe_search}'")
@@ -700,9 +708,8 @@ with tab2:
             key="interaction_mode_radio"
         )
 
-        ingredients = []  # ✅ Initialize before if/else
+        ingredients = []
 
-        # ✅ Only ONE text area shows at a time
         if interaction_mode == "Enter ingredients":
             interaction_input = st.text_area(
                 "Enter ingredients (one per line or comma-separated)",
@@ -731,9 +738,13 @@ with tab2:
                 for name in product_names:
                     match = next(
                         (p for p in agent.chatbot.products
-                        if name.lower() in p['name'].lower()),
+                        if name.lower() in p['name'].lower()
+                        or name.lower() in f"{p['brand']} {p['name']}".lower()
+                        or all(word in f"{p['brand']} {p['name']}".lower() 
+                                for word in name.lower().split())),
                         None
                     )
+
                     if match:
                         actives = agent.critic.extract_key_actives(
                             match.get('ingredients', [])
@@ -747,7 +758,7 @@ with tab2:
                         st.caption(f"✗ '{name}' not found in catalog")
                         ingredients.append(name)
 
-        if st.button("⚡ Check Interactions", type="primary", key="check_interactions_btn"):
+        if st.button(" Check Interactions", type="primary", key="check_interactions_btn"):
             if not ingredients:
                 st.warning("Please enter ingredients or product names first.")
             else:
