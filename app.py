@@ -6,15 +6,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from agent.agent import SkincarAgent
 
 def format_product(p):
-    if not p:
-        return "Select a product"
+    """Format product for dropdown display."""
+    if p is None:
+        return "Skip"
     try:
-        name  = p.get('name', 'Unknown')
-        brand = p.get('brand', 'Unknown')
-        price = p.get('price', 0) or 0
-        return f"{brand} — {name} (${float(price):.2f})"
+        return f"{p['name']} - ${float(p['price']):.2f}"
     except Exception:
-        return f"{p.get('brand', '')} — {p.get('name', 'Unknown')}"
+        return p.get('name', 'Unknown')
 
 st.set_page_config(
     page_title="SkinQ",
@@ -181,7 +179,7 @@ with tab2:
             if p is None:
                 return "Skip"
             rating = f"{p['rating']:.1f}" if p['rating'] > 0 else ""
-            return f"{p['name']} - ${p['price']:.2f}{rating}"
+            return f"{p['name']} - ${p['price']:.2f}" if p.get('price') else p.get('name', 'Unknown')
         
         col1, col2, col3 = st.columns(3)
 
