@@ -604,13 +604,13 @@ with tab2:
             if dupe_search:
                 #Show matching products
                 matches = next(
-    (p for p in agent.chatbot.products
-     if name.lower() in p['name'].lower()
-     or name.lower() in f"{p['brand']} {p['name']}".lower()
-     or all(word in f"{p['brand']} {p['name']}".lower() 
-            for word in name.lower().split())),
-    None
-)
+                    (p for p in agent.chatbot.products
+                    if dupe_search.lower() in p['name'].lower()
+                    or dupe_search.lower() in f"{p['brand']} {p['name']}".lower()
+                    or all(word in f"{p['brand']} {p['name']}".lower() 
+                            for word in dupe_search.lower().split())),
+                    None
+                )
 
                 if not matches:
                     st.warning(f"No products found matching '{dupe_search}'")
