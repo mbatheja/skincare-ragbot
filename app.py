@@ -6,13 +6,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from agent.agent import SkincarAgent
 
 def format_product(p):
-    """Safely format product for display in selectbox."""
     if not p:
         return "Select a product"
     try:
         name  = p.get('name', 'Unknown')
         brand = p.get('brand', 'Unknown')
-        price = p.get('price', 0)
+        price = p.get('price', 0) or 0
         return f"{brand} — {name} (${float(price):.2f})"
     except Exception:
         return f"{p.get('brand', '')} — {p.get('name', 'Unknown')}"
@@ -468,7 +467,7 @@ with tab2:
                     selected_for_sentiment = st.selectbox(
                         "Select product",
                         options = matching_products,
-                        format_func = format_product,
+                        format_func = lambda p: f"{p['name']} by {p['brand']} (${p['price']:.2f})" if p else "Select a product",
                         key = "sentiment_selected_product"
                     )
 
