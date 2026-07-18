@@ -78,6 +78,36 @@ class RoutineCritic:
             }         
         }
 
+        self.INGREDIENT_FAMILY_MAP = {
+    # AHAs
+    'glycolic_acid':  'aha',
+    'lactic_acid':    'aha',
+    'mandelic_acid':  'aha',
+    'malic_acid':     'aha',
+    'tartaric_acid':  'aha',
+    
+    # BHAs
+    'salicylic_acid': 'bha',
+    
+    # Retinoids
+    'retinol':        'retinoid',
+    'retinyl':        'retinoid',
+    'tretinoin':      'retinoid',
+    'retinaldehyde':  'retinoid',
+    
+    # Vitamin C forms
+    'vitamin c':      'vitamin_c',
+    'ascorbic_acid':  'vitamin_c',
+    
+    # Keep these as-is
+    'niacinamide':    'niacinamide',
+    'benzoyl peroxide': 'benzoyl_peroxide',
+    'peptides':       'peptides',
+    'ceramides':      'ceramides',
+    'hyaluronic_acid': 'hyaluronic_acid',
+}
+
+
         self.INGREDIENT_INTERACTIONS = {
             ('aha', 'retinol'): {
                 'severity': 'high',
@@ -89,7 +119,7 @@ class RoutineCritic:
                 'issue': 'Over-exfoliation risk, skin barrier damage',
                 'recommendation': 'Use retinol at night, BHA in morning routine or alternate nights'
             },
-            ('aha', 'vitamin c'): {
+            ('aha', 'vitamin_c'): {
                 'severity': 'medium',
                 'issue': 'Both acidic, can destabilize vitamin C and cause irritation',
                 'recommendation': 'Use vitamin C in AM, AHA in PM'
@@ -99,12 +129,12 @@ class RoutineCritic:
     'issue': 'Benzoyl peroxide oxidizes retinol, rendering it ineffective',
     'recommendation': 'Use benzoyl peroxide AM, retinol PM on alternate nights'
             },
-            ('niacinamide', 'vitamin c'): {
+            ('niacinamide', 'vitamin_c'): {
                 'severity': 'low',
                 'issue': 'May form niacin causing temporary flushing (debated in literature)',
                 'recommendation': 'Alternate nights - retinol Monday/Wednesday/Friday, glycolic Tuesday/Thursday' 
             },
-            ('glycolic acid', 'retinol'): {
+            ('glycolic_acid', 'retinol'): {
                 'severity': 'high',
                 'issue': 'Double exfoliation causes irritation and comprises skin barrier',
                 'recommendation': 'Alternate nights - retinol Monday/Wednesday/Friday, glycolic Tuesday/Thursday'

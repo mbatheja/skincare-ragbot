@@ -296,37 +296,63 @@ class SkincarAgent:
         
         # Tool 4: Check Ingredient Interactions
         @tool
-        def check_ingredient_interactions(ingredients: List[str]) -> str:
-            """
-            Check for harmful interactions between ingredients or products.
-            To be used when user would like to combine different products in routine.
+        def check_ingredient_interactions(self, products: List[Dict]) -> List[Dict]:
+            """Check for harmful interactions across products."""
+            conflicts             = []
+            ingredient_to_product = {}
 
-            Args:
-                ingredients: List of ingredient or product names to check 
-            """
+            for product in products:
+                actives = self.extract_key_actives(product.get('ingredients', []))
+                for active in actives:
+                    
+                    family = INGREDIENT_FAMILY_MAP.get(active, active)
+                    if family not in ingredient_to_product:
+                        ingredient_to_product[family] = []
+                    # Store original name + product for clear display
+                    ingredient_to_product[family].append({
+                        'product': product['name'],
+                        'original': active
+                    })
 
-            # Build dummy product dicts for the critic
-            dummy_products = [
-                {'name': ing, 'category': 'serum', 'ingredients': [ing]} for ing in ingredients
-            ]
+            families = list(ingredient_to_product.keys())
 
-            conflicts = critic.check_ingredient_interactions(dummy_products)
+            for i in range(len(families)):
+                for j in range(i + 1, len(families)):
+                    fam1 = families[i]
+                    fam2 = families[j]
 
-            if not conflicts:
-                return f"No known harmful interactions found between: {', '.join(ingredients)}"
+                    # Get products for each family
+                    products_fam1 = set(e['product'] for e in ingredient_to_product[fam1])
+                    products_fam2 = set(e['product'] for e in ingredient_to_product[fam2])
 
-            severity_emoji = {'high': '🔴', 'medium': '🟡', 'low': '🟢'}
-            
-            output = f"Found {len(conflicts)} interaction(s):\n\n"
+                    # Skip if same product
+                    if products_fam1 == products_fam2:
+                        continue
 
-            for conflict in conflicts:
-                emoji = severity_emoji.get(conflict['severity'], '')
-                output += f"{emoji} {conflict['ingredient_1'].capitalize()} + {conflict['ingredient_2'].capitalize()}\n"
-                output += f"Severity: {conflict['severity'].upper()}\n"
-                output += f"Issue: {conflict['issue']}\n"
-                output += f"Recommendation: {conflict['recommendation']}\n\n"
+                    pair = tuple(sorted([fam1, fam2]))
 
-            return output
+                    if pair in self.INGREDIENT_INTERACTIONS:
+                        interaction = self.INGREDIENT_INTERACTIONS[pair]
+
+                        # Get original ingredient names for display
+                        orig1 = [e['original'] for e in ingredient_to_product[fam1]]
+                        orig2 = [e['original'] for e in ingredient_to_product[fam2]]
+
+                        conflicts.append({
+                            'ingredient_1':   ', '.join(set(orig1)),  # e.g. "glycolic_acid, lactic_acid"
+                            'ingredient_2':   ', '.join(set(orig2)),  # e.g. "retinol"
+                            'family_1':       fam1,                   # e.g. "aha"
+                            'family_2':       fam2,                   # e.g. "retinoid"
+                            'product_1':      list(products_fam1),
+                            'product_2':      list(products_fam2),
+                            'severity':       interaction['severity'],
+                            'issue':          interaction['issue'],
+                            'recommendation': interaction['recommendation']
+                        })
+
+            severity_order = {'high': 0, 'medium': 1, 'low': 2}
+            conflicts.sort(key=lambda x: severity_order[x['severity']])
+            return conflicts
         
         # Tool 5: Critique Routine
         @tool
