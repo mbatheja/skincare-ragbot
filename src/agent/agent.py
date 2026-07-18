@@ -305,7 +305,7 @@ class SkincarAgent:
                 actives = self.extract_key_actives(product.get('ingredients', []))
                 for active in actives:
                     
-                    family = INGREDIENT_FAMILY_MAP.get(active, active)
+                    family = self.INGREDIENT_FAMILY_MAP.get(active, active)
                     if family not in ingredient_to_product:
                         ingredient_to_product[family] = []
                     # Store original name + product for clear display
