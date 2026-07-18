@@ -176,15 +176,6 @@ with tab2:
             )
         ]
 
-    def format_product(p):
-        """
-        Format product for dropdown display.
-        """
-
-        if p is None:
-            return "Skip"
-        return f"{p.get('name','Unknown')} - ${float(p.get('price', 0) or 0):.2f}"
-
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -615,14 +606,12 @@ with tab5:
 
     if dupe_search:
         #Show matching products
-        matches = next(
-            (p for p in agent.chatbot.products
+        matches = [
+            p for p in agent.chatbot.products
             if dupe_search.lower() in p['name'].lower()
-            or dupe_search.lower() in f"{p['brand']} {p['name']}".lower()
-            or all(word in f"{p['brand']} {p['name']}".lower()
-                    for word in dupe_search.lower().split())),
-            None
-        )
+            or dupe_search.lower() in p.get('brand', '').lower()
+            or dupe_search.lower() in f"{p.get('brand','')} {p['name']}".lower()
+        ]
 
         if not matches:
             st.warning(f"No products found matching '{dupe_search}'")
