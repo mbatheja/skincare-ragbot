@@ -60,10 +60,16 @@ class SkincarAgent:
         self.tools = self._build_tools()
 
         # build agent
+        try:
+            import streamlit as st
+            api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        except Exception:
+            api_key = os.environ.get("OPENAI_API_KEY")
+
         self.llm = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0.7,
-            api_key=os.environ.get("OPENAI_API_KEY")
+            api_key=api_key
         )
 
         system_prompt = """You are  QSkin, an expert AI skincare advisor.

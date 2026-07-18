@@ -21,8 +21,12 @@ class RoutineCritic:
         """
 
         self.ingredient_extractor = ingredient_extractor
-        
-        api_key = os.environ.get("OPENAI_API_KEY")
+
+        try:
+            import streamlit as st
+            api_key = st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        except Exception:
+            api_key = os.environ.get("OPENAI_API_KEY")
 
         self.client = OpenAI(api_key = api_key)
 
